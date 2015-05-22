@@ -84,17 +84,14 @@ end
 function AsyncIO.watchdog(self)
 	while self.ContinueRunning do
 		local available, err = self.EPollSet:wait(self.Events, self.MaxEvents, self.EventQuanta);
---print("+=+=+= AsyncIO.watchdog: ", available, err)
 
 
 		if available then
 			if available > 0 then
---print("+=+=+= AsyncIO.watchdog: ", available)
 			    for idx=0,available-1 do
 			    	local ptr = ffi.cast("struct epoll_event *", ffi.cast("char *", self.Events)+ffi.sizeof("struct epoll_event")*idx);
 			    	--print("watchdog, ptr.data.ptr: ", ptr, ptr.data.ptr);
 				    local sigName = sigNameFromEvent(ptr);
---print(string.format("AsyncIO.watchdog(), signaling: '%s'  Events: 0x%x", sigName,  self.Events[idx].events))
 				    self.Kernel:signalAll(sigName, self.Events[idx].events);
 			    end
 			else

@@ -13,7 +13,7 @@ function structForm.new(self, atype, depth, parent)
 	depth = depth or 1;
 	depth = depth - 1;
 
-print("WHAT: ", atype.what);
+--print("WHAT: ", atype.what);
 
 	local func = structForm[atype.what];
 	if not func then
@@ -26,11 +26,6 @@ print("WHAT: ", atype.what);
 end
 
 function structForm.array(ref, depth, parent)
-	print("==== structForm.array ====")
-	for k,v in pairs(ref) do
-		print(k,v)
-	end
-	
 	return string.format("%s %s[%d]", structForm(ref.element_type, 1), parent.name, ref.size);
 end
 

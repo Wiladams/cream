@@ -5,6 +5,7 @@ local reflect = require("reflect")
 local reform = require("reflect_util")
 local ljsys = require("ljsyscall.syscall")
 --local linux = require("linux")
+local ssl = require("ssl_ffi")
 
 ffi.cdef[[
 void * malloc(int size);

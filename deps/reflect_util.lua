@@ -9,27 +9,36 @@ setmetatable(structForm, {
 	end,
 })
 
-function structForm.new(self, atype, depth)
+function structForm.new(self, atype, depth, parent)
 	depth = depth or 1;
 	depth = depth - 1;
 
---print("WHAT: ", atype.what);
+print("WHAT: ", atype.what);
 
 	local func = structForm[atype.what];
 	if not func then
 		return false, "structForm.new: no function found for: "..atype.what;
 	end
 
-	local str, err = func(atype, depth);
+	local str, err = func(atype, depth, parent);
 	
 	return str, err;
 end
 
-function structForm.field(ref, depth)
-	return string.format("%s  %s", structForm(ref.type, depth), ref.name);
+function structForm.array(ref, depth, parent)
+	print("==== structForm.array ====")
+	for k,v in pairs(ref) do
+		print(k,v)
+	end
+	
+	return string.format("%s %s[%d]", structForm(ref.element_type, 1), parent.name, ref.size);
 end
 
-function structForm.float(ref, depth)
+function structForm.field(ref, depth, parent)
+	return string.format("%s", structForm(ref.type, depth, ref));
+end
+
+function structForm.float(ref, depth, parent)
 	if ref.size == 4 then
 		return "float";
 	elseif ref.size == 8 then
@@ -39,9 +48,9 @@ function structForm.float(ref, depth)
 	return false, "unknown float size";
 end
 
-function structForm.func(ref, depth)
+function structForm.func(ref, depth, parent)
 
-	local str = structForm(ref.return_type);
+	local str = structForm(ref.return_type, 1, ref);
 	str = str..' '..ref.name;
 	str = str..'(';
 	for i=1,ref.nargs do
@@ -49,7 +58,7 @@ function structForm.func(ref, depth)
 			str = str..', ';
 		end
 
-		str = str..structForm(ref:argument(i), depth);
+		str = str..structForm(ref:argument(i), 1, ref);
 		--print("ARG: ", ref:argument(i));
 	end
 	str = str..');';
@@ -57,7 +66,7 @@ function structForm.func(ref, depth)
 	return str;
 end
 
-function structForm.int(ref, depth)
+function structForm.int(ref, depth, parent)
 	local str="";
 	
 	if ref.const then
@@ -76,7 +85,7 @@ function structForm.int(ref, depth)
 	return str..string.format("int%d_t", ref.size*8);
 end
 
-function structForm.ptr(ref, depth)
+function structForm.ptr(ref, depth, parent)
 	local str = structForm(ref.element_type, depth);
 	if not str then
 		return false;
@@ -85,7 +94,7 @@ function structForm.ptr(ref, depth)
 	return str..' *';
 end
 
-function structForm.struct(ref, depth)
+function structForm.struct(ref, depth, parent)
 	local res = {};
 	table.insert(res, string.format("typedef struct %s {\n", ref.name));
 	for member in ref:members() do
@@ -99,7 +108,7 @@ function structForm.struct(ref, depth)
 	return table.concat(res);
 end
 
-function structForm.union(ref, depth)
+function structForm.union(ref, depth, parent)
 	local res = {};
 	table.insert(res, string.format("typedef union %s {\n", ref.name));
 	for member in ref:members() do
@@ -113,7 +122,7 @@ function structForm.union(ref, depth)
 	return table.concat(res);
 end
 
-function structForm.void(ref)
+function structForm.void(ref, depth, parent)
 	return 'void';
 end
 

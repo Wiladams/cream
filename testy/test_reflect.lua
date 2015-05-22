@@ -3,8 +3,8 @@
 local ffi = require("ffi")
 local reflect = require("reflect")
 local reform = require("reflect_util")
---local ljsys = require("ljsyscall.syscall")
-local linux = require("linux")
+local ljsys = require("ljsyscall.syscall")
+--local linux = require("linux")
 
 ffi.cdef[[
 void * malloc(int size);
@@ -15,6 +15,15 @@ typedef struct foobar {
 	int bar;
 	char *bazz;
 } foobar;
+
+struct funkyname {
+  char sysname[65];
+  char nodename[65];
+  char release[65];
+  char version[65];
+  char machine[65];
+  unsigned char domainname[65];
+};
 ]]
 
 local function showme(cname)
@@ -38,16 +47,19 @@ end
 
 local function main()
 	local lookups = {
-	"malloc",
-	"free",
-	"struct foobar",
-	"foobar",
-	"flipper",
-	"struct timespec",
-	"epoll_data_t",
-	"clockid_t",
-	"clock_getres",
-	"clock_nanosleep",
+--	"malloc",
+--	"free",
+--	"struct foobar",
+--	"foobar",
+--	"flipper",
+--	"struct timespec",
+--	"epoll_data_t",
+--	"clockid_t",
+--	"clock_getres",
+--	"clock_nanosleep",
+--	"lchmod",
+--	"struct utsname",
+	"struct funkyname",
 };
 
 	for _, item in ipairs(lookups) do

@@ -241,7 +241,7 @@ enum ovs_frag_type {
 };
 ]]
 
---#define OVS_FRAG_TYPE_MAX (__OVS_FRAG_TYPE_MAX - 1)
+exports.OVS_FRAG_TYPE_MAX = ffi.C.__OVS_FRAG_TYPE_MAX - 1;
 
 ffi.cdef[[
 struct ovs_key_ethernet {

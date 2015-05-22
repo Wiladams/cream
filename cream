@@ -1,0 +1,21 @@
+#!/usr/local/bin/luajit
+
+print("cream...")
+local Kernel = require("kernel"){exportglobal = true}
+local predicate = require("predicate"){Kernel=Kernel, exportglobal=true}
+local alarm = require("alarm"){Kernel=Kernel, exportglobal = true}
+
+
+if (arg[1] ~= nil) then
+	local f, err = loadfile(arg[1])
+	
+	if not f then
+		print("Error loading file: ", arg[1], err)
+		return false, err;
+	end
+	
+	local func = f();
+
+	run(func);
+end
+

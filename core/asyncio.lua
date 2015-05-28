@@ -5,8 +5,8 @@ local bit = require("bit")
 local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 
 
-local Functor = require("functor")
-local epoll = require("epoll");
+local Functor = require("core.functor")
+local epoll = require("core.epoll");
 
 
 

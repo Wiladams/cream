@@ -1,8 +1,8 @@
 --alarm.lua
 
-local Functor = require("functor")
-local tabutils = require("tabutils")
-local Clock = require("clock")
+local Functor = require("core.functor")
+local tabutils = require("core.tabutils")
+local Clock = require("core.clock")
 
 
 local Alarm = {

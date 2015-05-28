@@ -1,8 +1,8 @@
 --kernel.lua
 
-local Scheduler = require("scheduler")
-local Task = require("task")
-local Functor = require("functor")
+local Scheduler = require("core.scheduler")
+local Task = require("core.task")
+local Functor = require("core.functor")
 
 local Kernel = {
 	ContinueRunning = true;

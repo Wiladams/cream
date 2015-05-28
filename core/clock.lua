@@ -3,7 +3,7 @@ local bit = require("bit")
 
 
 
-local system = require("linux")
+local system = require("core.linux")
 
 local Clock = {}
 setmetatable(Clock, {

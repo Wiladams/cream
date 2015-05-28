@@ -2,10 +2,10 @@ local ffi = require("ffi")
 local bit = require("bit")
 local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 
-local Kernel = require("kernel")()
-local asyncio = require("asyncio"){Kernel = Kernel, AutoStart=true}
-local epoll = require("epoll")
-local errnos = require("linux_errno").errnos
+local Kernel = require("core.kernel")()
+local asyncio = require("core.asyncio"){Kernel = Kernel, AutoStart=true}
+local epoll = require("core.epoll")
+local errnos = require("core.linux_errno").errnos
 
 local exports = nil;
 

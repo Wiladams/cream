@@ -19,6 +19,11 @@ local function import(dst, name)
 	end
 end
 
+
+import(exports, "command_line")
+import(exports, "hmap")
+import(exports, "json")
+import(exports, "list")
 import(exports, "shash")
 
 return exports

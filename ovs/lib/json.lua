@@ -88,7 +88,7 @@ void json_parser_abort(struct json_parser *);
 
 struct json *json_from_string(const char *string);
 struct json *json_from_file(const char *file_name);
-struct json *json_from_stream(FILE *stream);
+//struct json *json_from_stream(FILE *stream);
 ]]
 
 ffi.cdef[[
@@ -108,3 +108,74 @@ ffi.cdef[[
 bool json_string_unescape(const char *in, size_t in_len, char **outp);
 ]]
 
+local jsonlib = ffi.load("openvswitch")
+
+local exports = {
+    -- The shared library
+    jsonlib = jsonlib;
+
+    -- Enums
+    JSON_NULL = ffi.C.JSON_NULL,
+    JSON_FALSE = ffi.C.JSON_FALSE,
+    JSON_TRUE = ffi.C.JSON_TRUE,
+    JSON_OBJECT = ffi.C.JSON_OBJECT,
+    JSON_ARRAY = ffi.C.JSON_ARRAY,
+    JSON_INTEGER = ffi.C.JSON_INTEGER,
+    JSON_REAL = ffi.C.JSON_REAL,
+    JSON_STRING = ffi.C.JSON_STRING,
+    JSON_N_TYPES = ffi.C.JSON_N_TYPES;
+
+    JSSF_PRETTY = ffi.C.JSSF_PRETTY;
+    JSSF_SORT = ffi.C.JSSF_SORT;
+    
+
+    -- Functions
+    json_type_to_string = jsonlib.json_type_to_string;
+    json_null_create = jsonlib.json_null_create;
+    json_boolean_create = jsonlib.json_boolean_create;
+    json_string_create = jsonlib.json_string_create;
+    json_string_create_nocopy = jsonlib.json_string_create_nocopy;
+    json_integer_create = jsonlib.json_integer_create;
+    json_real_create = jsonlib.json_real_create;
+
+    json_array_create_empty = jsonlib.json_array_create_empty;
+    json_array_add = jsonlib.json_array_add;
+    json_array_trim = jsonlib.json_array_trim;
+    json_array_create = jsonlib.json_array_create;
+    json_array_create_1 = jsonlib.json_array_create_1;
+    json_array_create_2 = jsonlib.json_array_create_2;
+    json_array_create_3 = jsonlib.json_array_create_3;
+
+    json_object_create = jsonlib.json_object_create;
+    json_object_put = jsonlib.json_object_put;
+    json_object_put_string = jsonlib.json_object_put_string;
+
+    json_string = jsonlib.json_string;
+    json_array = jsonlib.json_array;
+    json_object = jsonlib.json_object;
+    json_boolean = jsonlib.json_boolean;
+    json_real = jsonlib.json_real;
+    json_integer = jsonlib.json_integer;
+
+    json_clone = jsonlib.json_clone;
+    json_destroy = jsonlib.json_destroy;
+
+    json_hash = jsonlib.json_hash;
+    json_equal = jsonlib.json_equal;
+
+    json_parser_create = jsonlib.json_parser_create;
+    json_parser_feed = jsonlib.json_parser_feed;
+    json_parser_is_done = jsonlib.json_parser_is_done;
+    json_parser_finish = jsonlib.json_parser_finish;
+    json_parser_abort = jsonlib.json_parser_abort;
+
+    json_from_string = jsonlib.json_from_string;
+    json_from_file = jsonlib.json_from_file;
+
+    json_to_string = jsonlib.json_to_string;
+    json_to_ds = jsonlib.json_to_ds;
+    json_string_unescape = jsonlib.json_string_unescape;
+
+}
+
+return exports

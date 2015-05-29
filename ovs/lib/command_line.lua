@@ -4,19 +4,16 @@ local ffi = require("ffi")
 
 -- Utilities for command-line parsing.
 
-require ("ovs.lib.compiler")
+--require ("ovs.lib.compiler")
 
 ffi.cdef[[
 struct option;
 
 /* Command handler context */
 struct ovs_cmdl_context {
-    /* number of command line arguments */
-    int argc;
-    /* array of command line arguments */
-    char **argv;
-    /* private context data defined by the API user */
-    void *pvt;
+    int argc;   /* number of command line arguments */
+    char **argv;/* array of command line arguments */
+    void *pvt;  /* private context data defined by the API user */
 };
 
 typedef void (*ovs_cmdl_handler)(struct ovs_cmdl_context *);
@@ -40,11 +37,12 @@ void ovs_cmdl_proctitle_init(int argc, char **argv);
 void ovs_cmdl_proctitle_restore(void);
 ]]
 
+--[[
 if ffi.os() == "freebsd" or ffi.os() == "netbsd" then
 --#define ovs_cmdl_proctitle_set setproctitle
 else
 --void ovs_cmdl_proctitle_set(const char *, ...)
 --    OVS_PRINTF_FORMAT(1, 2);
 end
-
+--]]
 

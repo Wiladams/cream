@@ -1,8 +1,6 @@
 local ffi = require("ffi")
 local vconn_ffi = require("vconn_ffi")
 
-int vconn_open(const char *name, uint32_t allowed_versions, uint8_t dscp,
-               struct vconn **vconnp);
 
 local VConn = {}
 setmetatable(VConn, {

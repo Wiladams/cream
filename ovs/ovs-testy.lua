@@ -1,6 +1,6 @@
 #!/usr/local/bin/luajit
 
-package.path = package.path..";../../?.lua;../?.lua;"
+package.path = package.path..";../?.lua;"
 
 local Kernel = require("core.kernel"){exportglobal = true}
 local predicate = require("core.predicate"){Kernel=Kernel, exportglobal=true}

@@ -3,8 +3,8 @@
 local ffi = require("ffi")
 local reflect = require("reflect")
 local reform = require("reflect_util")
-local ljsys = require("ljsyscall.syscall")
---local linux = require("linux")
+--local ljsys = require("ljsyscall.syscall")
+local linux = require("linux")
 local ssl = require("ssl_ffi")
 
 ffi.cdef[[
@@ -60,7 +60,9 @@ local function main()
 --	"clock_nanosleep",
 --	"lchmod",
 --	"struct utsname",
-	"struct funkyname",
+--	"struct funkyname",
+--"SSL_CTX_use_certificate_file",
+"SSL_library_init",
 };
 
 	for _, item in ipairs(lookups) do

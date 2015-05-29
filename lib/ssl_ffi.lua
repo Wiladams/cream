@@ -70,3 +70,9 @@ static const int SSL_MODE_RELEASE_BUFFERS = 0x00000010;
 static const int SSL_CTRL_OPTIONS = 32;
 static const int SSL_CTRL_MODE = 33;
 ]]
+
+local exports = {
+	SSLLib = ffi.load("libssl"); 
+}
+
+return exports;

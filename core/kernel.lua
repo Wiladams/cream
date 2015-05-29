@@ -1,8 +1,78 @@
 --kernel.lua
 
 local Scheduler = require("core.scheduler")
---local Task = require("core.task")
 local Functor = require("core.functor")
+local alarm = require("alarm")
+
+
+
+
+local Predicate = {}
+setmetatable(Predicate, {
+	__call = function(self, params)
+		params = params or {}
+		self.Kernel = params.Kernel;
+		if params.exportglobal then
+			self:globalize();
+		end
+		return self;
+	end;
+})
+
+function Predicate.signalOnPredicate(self, pred, signalName)
+	local function closure()
+		local res = nil;
+		repeat
+			res = pred();
+			if res == true then 
+				return self.Kernel:signalAll(signalName) 
+			end;
+
+			self.Kernel:yield();
+		until res == nil
+	end
+
+	return self.Kernel:spawn(closure)
+end
+
+function Predicate.waitForPredicate(self, pred)
+	local signalName = "predicate-"..tostring(self.Kernel:getCurrentTaskID());
+	self:signalOnPredicate(pred, signalName);
+	return self.Kernel:waitForSignal(signalName);
+end
+
+function Predicate.when(self, pred, func)
+	local function closure(lpred, lfunc)
+		self:waitForPredicate(lpred)
+		lfunc()
+	end
+
+	return self.Kernel:spawn(closure, pred, func)
+end
+
+function Predicate.whenever(self, pred, func)
+
+	local function closure(lpred, lfunc)
+		local signalName = "whenever-"..tostring(self.Kernel:getCurrentTaskID());
+		local res = true;
+		repeat
+			self:signalOnPredicate(lpred, signalName);
+			res = self.Kernel:waitForSignal(signalName);
+			lfunc()
+		until false
+	end
+
+	return self.Kernel:spawn(closure, pred, func)
+end
+
+function Predicate.globalize(self)
+	_G["signalOnPredicate"] = Functor(Predicate.signalOnPredicate, Predicate);
+	_G["waitForPredicate"] = Functor(Predicate.waitForPredicate, Predicate);
+	_G["when"] = Functor(Predicate.when, Predicate);
+	_G["whenever"] = Functor(Predicate.whenever, Predicate);
+
+end
+
 
 --[[
 	Fiber, contains stuff related to a running fiber
@@ -67,12 +137,21 @@ function Task.yield(self, ...)
 	return coroutine.yield(...)
 end
 
+--[[
+	Kernel
 
+	The glue of the system.  The kernel pulls all the constituent
+	parts together.  I specifies the scheduler, creates tasks, and 
+	handles signals.
+
+--]]
 local Kernel = {
 	ContinueRunning = true;
 	TaskID = 0;
 	Scheduler = Scheduler();
 	TasksSuspendedForSignal = {};
+
+	Functor = Functor;
 }
 
 setmetatable(Kernel, {
@@ -200,6 +279,9 @@ function Kernel.halt(self)
 end
 
 function Kernel.globalize()
+	Predicate:globalize();
+	alarm:globalize();
+
 	halt = Functor(Kernel.halt, Kernel);
     onSignal = Functor(Kernel.onSignal, Kernel);
 
@@ -215,5 +297,8 @@ function Kernel.globalize()
 
     yield = Functor(Kernel.yield, Kernel);
 end
+
+Predicate({Kernel = Kernel})
+alarm {Kernel=Kernel}
 
 return Kernel;

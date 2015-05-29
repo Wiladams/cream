@@ -5,7 +5,7 @@ local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 local net = require("linux_net")
 local epoll = require("epoll")
 local asyncio = require("asyncio")
-local errnos = require("linux_errno").errnos
+local errnos = require("linux").errnos
 
 
 local function lookupsite(nodename, servname)

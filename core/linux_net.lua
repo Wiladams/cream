@@ -5,7 +5,7 @@ local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 local Kernel = require("core.kernel")()
 local asyncio = require("core.asyncio"){Kernel = Kernel, AutoStart=true}
 local epoll = require("core.epoll")
-local errnos = require("core.linux_errno").errnos
+--local errnos = require("core.linux_errno").errnos
 
 local exports = nil;
 

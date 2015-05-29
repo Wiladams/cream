@@ -4,7 +4,6 @@ local ffi = require("ffi")
 local reflect = require("reflect")
 local reform = require("reflect_util")
 --local ljsys = require("ljsyscall.syscall")
-local linux = require("linux")
 local ssl = require("ssl_ffi")
 
 ffi.cdef[[
@@ -27,27 +26,38 @@ struct funkyname {
 };
 ]]
 
-local function showme(cname)
-	-- first try to look it up as a function or constant
-	local success, atype = pcall(function() return reflect.typeof(ffi.C[cname]) end);
+local function showme(cname, libhint)
+	local success, atype = nil;
+
+	if libhint then
+		success, atype = pcall(function() return reflect.typeof(libhint[cname]) end);
+		if success and atype ~= nil then
+			return reform(atype)
+		end
+	end
+
+	-- first try to look it up as a function or constant in standard libraries
+	success, atype = pcall(function() return reflect.typeof(ffi.C[cname]) end);
 
 	if success then 
 		return reform(atype);
 	end
 
 	-- if that didn't work, then try to look it up as a type
-	local success, atype = pcall(function() return reflect.typeof(ffi.typeof(cname)) end);
+	success, atype = pcall(function() return reflect.typeof(ffi.typeof(cname)) end);
 
-	if not success then
-		return false, atype;
+	if success then
+		return reform(atype)
 	end
 
-	return reform(atype);
+	-- if that didn't work, then look it up in the hinted library
+	-- if there is one
+
+	return false, atype;
 end
 
 
-local function main()
-	local lookups = {
+local lookups = {
 --	"malloc",
 --	"free",
 --	"struct foobar",
@@ -62,11 +72,22 @@ local function main()
 --	"struct utsname",
 --	"struct funkyname",
 --"SSL_CTX_use_certificate_file",
-"SSL_library_init",
+	{name = "SSL_library_init", lib=ssl.SSLLib},
 };
 
+local function test_ssl()
+	print("SSL:", #ssl, ssl.SSLLib)
+for k,v in pairs(ssl) do
+	print(k,v);
+end
+
+	local res = ssl.SSLLib.SSL_library_init();
+	print(res);
+end
+
+local function main() 
 	for _, item in ipairs(lookups) do
-		local success, err = showme(item)
+		local success, err = showme(item.name, item.lib)
 
 		if not success then
 			print(string.format("LOOKUP: %15s  ERROR: %s", item, tostring(err)));

@@ -63,6 +63,7 @@ local Alarm = {
 
 setmetatable(Alarm, {
 	__call = function(self, params)
+	print("Alarm:__call: ", self, params)
 		params = params or {}
 		self.Kernel = params.Kernel;
 		if params.exportglobal then
@@ -91,7 +92,7 @@ function Alarm.waitUntilTime(self, atime)
 	local fiber = {DueTime = atime, SignalName = signalName};
 
 	-- put time/signal into list so watchdog will pick it up
-	tabutils.binsert(self.SignalsWaitingForTime, fiber, compareDueTime)
+	binsert(self.SignalsWaitingForTime, fiber, compareDueTime)
 
 	-- put the current task to wait on signal
 	self.Kernel:waitForSignal(signalName);

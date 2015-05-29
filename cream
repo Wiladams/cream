@@ -2,8 +2,6 @@
 package.path = "./?.lua;./core/?.lua;./deps/?.lua;./deps/ljsyscall/?.lua;./lib/?.lua"
 
 local Kernel = require("kernel"){exportglobal = true}
-local predicate = require("predicate"){Kernel=Kernel, exportglobal=true}
-local alarm = require("alarm"){Kernel=Kernel, exportglobal = true}
 --local asyncio = require("asyncio"){Kernel=Kernel, exportglobal = true}
 
 if (arg[1] ~= nil) then

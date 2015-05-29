@@ -10,40 +10,15 @@
 	to abandon it and switch to ljsyscall
 --]]
 local ffi = require("ffi")
+local bit = require("bit")
+local lshift, rshift, bor, band = bit.lshift, bit.rshift, bit.bor, bit.band;
+
+local linux_ffi = require("linux_ffi")
 
 local exports = {}
 local C = {}	-- C interop, or syscall
 
 
--- mostly from time.h
-ffi.cdef[[
-typedef int32_t       clockid_t;
-typedef long          time_t;
-
-struct timespec {
-  time_t tv_sec;
-  long   tv_nsec;
-};
-
-int clock_getres(clockid_t clk_id, struct timespec *res);
-int clock_gettime(clockid_t clk_id, struct timespec *tp);
-int clock_settime(clockid_t clk_id, const struct timespec *tp);
-int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain);
-
-static const int CLOCK_REALTIME			= 0;
-static const int CLOCK_MONOTONIC			= 1;
-static const int CLOCK_PROCESS_CPUTIME_ID	= 2;
-static const int CLOCK_THREAD_CPUTIME_ID	= 3;
-static const int CLOCK_MONOTONIC_RAW		= 4;
-static const int CLOCK_REALTIME_COARSE		= 5;
-static const int CLOCK_MONOTONIC_COARSE	= 6;
-static const int CLOCK_BOOTTIME			= 7;
-static const int CLOCK_REALTIME_ALARM		= 8;
-static const int CLOCK_BOOTTIME_ALARM		= 9;
-static const int CLOCK_SGI_CYCLE			= 10;	// Hardware specific 
-static const int CLOCK_TAI					= 11;
-
-]]
 
 
 local timespec = ffi.typeof("struct timespec")
@@ -107,8 +82,283 @@ function exports.sleep(seconds, clockid, flags)
 end
 
 
+--[[
+	Things related to epoll
+--]]
+exports.EPOLLIN 	= 0x0001;
+exports.EPOLLPRI 	= 0x0002;
+exports.EPOLLOUT 	= 0x0004;
+exports.EPOLLRDNORM = 0x0040;			-- SAME AS EPOLLIN
+exports.EPOLLRDBAND = 0x0080;
+exports.EPOLLWRNORM = 0x0100;			-- SAME AS EPOLLOUT
+exports.EPOLLWRBAND = 0x0200;
+exports.EPOLLMSG	= 0x0400;			-- NOT USED
+exports.EPOLLERR 	= 0x0008;
+exports.EPOLLHUP 	= 0x0010;
+exports.EPOLLRDHUP 	= 0x2000;
+exports.EPOLLWAKEUP = lshift(1,29);
+exports.EPOLLONESHOT = lshift(1,30);
+exports.EPOLLET 	= lshift(1,31);
 
-exports.C = C;
+
+
+
+-- Valid opcodes ( "op" parameter ) to issue to epoll_ctl().
+exports.EPOLL_CTL_ADD =1	-- Add a file descriptor to the interface.
+exports.EPOLL_CTL_DEL =2	-- Remove a file descriptor from the interface.
+exports.EPOLL_CTL_MOD =3	-- Change file descriptor epoll_event structure.
+
+
+ffi.cdef[[
+typedef struct _epollset {
+	int epfd;		// epoll file descriptor
+} epollset;
+]]
+
+local epollset = ffi.typeof("epollset")
+local epollset_mt = {
+	__new = function(ct, epfd)
+		if not epfd then
+			epfd = ffi.C.epoll_create1(0);
+		end
+
+		if epfd < 0 then
+			return nil;
+		end
+
+		return ffi.new(ct, epfd)
+	end,
+
+	__gc = function(self)
+		-- ffi.C.close(self.epfd);
+	end;
+
+	__index = {
+		add = function(self, fd, event)
+			local ret = ffi.C.epoll_ctl(self.epfd, exports.EPOLL_CTL_ADD, fd, event)
+
+			if ret > -1 then
+				return ret;
+			end
+
+			return false, ffi.errno();
+		end,
+
+		delete = function(self, fd, event)
+			local ret = ffi.C.epoll_ctl(self.epfd, exports.EPOLL_CTL_DEL, fd, event)
+
+			if ret > -1 then
+				return ret;
+			end
+
+			return false, ffi.errno();
+		end,
+
+		modify = function(self, fd, event)
+			local ret = ffi.C.epoll_ctl(self.epfd, exports.EPOLL_CTL_MOD, fd, event)
+			if ret > -1 then
+				return ret;
+			end
+
+			return false, ffi.errno();
+		end,
+
+		-- struct epoll_event *__events
+		wait = function(self, events, maxevents, timeout)
+			maxevents = maxevents or 1
+			timeout = timeout or -1
+
+			-- gets either number of ready events
+			-- or -1 indicating an error
+			local ret = ffi.C.epoll_wait (self.epfd, events, maxevents, timeout);
+			if ret == -1 then
+				return false, ffi.errno();
+			end
+
+			return ret;
+		end,
+	};
+}
+ffi.metatype(epollset, epollset_mt);
+
+exports.epollset = epollset;
+
+
+
+
+--[[
+	Linux error numbers
+--]]
+exports.errnos = {
+    EPERM =  1;  -- Operation not permitted 
+    ENOENT =  2;  -- No such file or directory 
+    ESRCH =  3;  -- No such process 
+    EINTR =  4;  -- Interrupted system call 
+    EIO =  5;  -- I/O error 
+    ENXIO =  6;  -- No such device or address 
+    E2BIG =  7;  -- Argument list too long 
+    ENOEXEC =  8;  -- Exec format error 
+    EBADF =  9;  -- Bad file number 
+    ECHILD = 10;  -- No child processes 
+    EAGAIN = 11;  -- Try again 
+    ENOMEM = 12;  -- Out of memory 
+    EACCES = 13;  -- Permission denied 
+    EFAULT = 14;  -- Bad address 
+    ENOTBLK = 15;  -- Block device required 
+    EBUSY = 16;  -- Device or resource busy 
+    EEXIST = 17;  -- File exists 
+    EXDEV = 18;  -- Cross-device link 
+    ENODEV = 19;  -- No such device 
+    ENOTDIR = 20;  -- Not a directory 
+    EISDIR = 21;  -- Is a directory 
+    EINVAL = 22;  -- Invalid argument 
+    ENFILE = 23;  -- File table overflow 
+    EMFILE = 24;  -- Too many open files 
+    ENOTTY = 25;  -- Not a typewriter 
+    ETXTBSY = 26;  -- Text file busy 
+    EFBIG = 27;  -- File too large 
+    ENOSPC = 28;  -- No space left on device 
+    ESPIPE = 29;  -- Illegal seek 
+    EROFS = 30;  -- Read-only file system 
+    EMLINK = 31;  -- Too many links 
+    EPIPE = 32;  -- Broken pipe 
+    EDOM = 33;  -- Math argument out of domain of func 
+    ERANGE = 34;  -- Math result not representable 
+
+    EDEADLK = 35;  -- Resource deadlock would occur 
+    ENAMETOOLONG = 36;  -- File name too long 
+    ENOLCK = 37;  -- No record locks available 
+    ENOSYS = 38;  -- Function not implemented 
+    ENOTEMPTY = 39;  -- Directory not empty 
+    ELOOP = 40;  -- Too many symbolic links encountered 
+    EWOULDBLOCK =     EAGAIN;  -- Operation would block 
+    ENOMSG = 42;  -- No message of desired type 
+    EIDRM = 43;  -- Identifier removed 
+    ECHRNG = 44;  -- Channel number out of range 
+    EL2NSYNC = 45;  -- Level 2 not synchronized 
+    EL3HLT = 46;  -- Level 3 halted 
+    EL3RST = 47;  -- Level 3 reset 
+    ELNRNG = 48;  -- Link number out of range 
+    EUNATCH = 49;  -- Protocol driver not attached 
+    ENOCSI = 50;  -- No CSI structure available 
+    EL2HLT = 51;  -- Level 2 halted 
+    EBADE = 52;  -- Invalid exchange 
+    EBADR = 53;  -- Invalid request descriptor 
+    EXFULL = 54;  -- Exchange full 
+    ENOANO = 55;  -- No anode 
+    EBADRQC = 56;  -- Invalid request code 
+    EBADSLT = 57;  -- Invalid slot 
+
+    EDEADLOCK  =     EDEADLK;
+
+    EBFONT = 59;  -- Bad font file format 
+    ENOSTR = 60;  -- Device not a stream 
+    ENODATA = 61;  -- No data available 
+    ETIME = 62;  -- Timer expired 
+    ENOSR = 63;  -- Out of streams resources 
+    ENONET = 64;  -- Machine is not on the network 
+    ENOPKG = 65;  -- Package not installed 
+    EREMOTE = 66;  -- Object is remote 
+    ENOLINK = 67;  -- Link has been severed 
+    EADV = 68;  -- Advertise error 
+    ESRMNT = 69;  -- Srmount error 
+    ECOMM = 70;  -- Communication error on send 
+    EPROTO = 71;  -- Protocol error 
+    EMULTIHOP = 72;  -- Multihop attempted 
+    EDOTDOT = 73;  -- RFS specific error 
+    EBADMSG = 74;  -- Not a data message 
+    EOVERFLOW = 75;  -- Value too large for defined data type 
+    ENOTUNIQ = 76;  -- Name not unique on network 
+    EBADFD = 77;  -- File descriptor in bad state 
+    EREMCHG = 78;  -- Remote address changed 
+    ELIBACC = 79;  -- Can not access a needed shared library 
+    ELIBBAD = 80;  -- Accessing a corrupted shared library 
+    ELIBSCN = 81;  -- .lib section in a.out corrupted 
+    ELIBMAX = 82;  -- Attempting to link in too many shared libraries 
+    ELIBEXEC = 83;  -- Cannot exec a shared library directly 
+    EILSEQ = 84;  -- Illegal byte sequence 
+    ERESTART = 85;  -- Interrupted system call should be restarted 
+    ESTRPIPE = 86;  -- Streams pipe error 
+    EUSERS = 87;  -- Too many users 
+    ENOTSOCK = 88;  -- Socket operation on non-socket 
+    EDESTADDRREQ = 89;  -- Destination address required 
+    EMSGSIZE = 90;  -- Message too long 
+    EPROTOTYPE = 91;  -- Protocol wrong type for socket 
+    ENOPROTOOPT = 92;  -- Protocol not available 
+    EPROTONOSUPPORT = 93;  -- Protocol not supported 
+    ESOCKTNOSUPPORT = 94;  -- Socket type not supported 
+    EOPNOTSUPP = 95;  -- Operation not supported on transport endpoint 
+    EPFNOSUPPORT = 96;  -- Protocol family not supported 
+    EAFNOSUPPORT = 97;  -- Address family not supported by protocol 
+    EADDRINUSE = 98;  -- Address already in use 
+    EADDRNOTAVAIL = 99;  -- Cannot assign requested address 
+    ENETDOWN = 100;  -- Network is down 
+    ENETUNREACH = 101;  -- Network is unreachable 
+    ENETRESET = 102;  -- Network dropped connection because of reset 
+    ECONNABORTED = 103;  -- Software caused connection abort 
+    ECONNRESET = 104;  -- Connection reset by peer 
+    ENOBUFS = 105;  -- No buffer space available 
+    EISCONN = 106;  -- Transport endpoint is already connected 
+    ENOTCONN = 107;  -- Transport endpoint is not connected 
+    ESHUTDOWN = 108;  -- Cannot send after transport endpoint shutdown 
+    ETOOMANYREFS = 109;  -- Too many references: cannot splice 
+    ETIMEDOUT = 110;  -- Connection timed out 
+    ECONNREFUSED = 111;  -- Connection refused 
+    EHOSTDOWN = 112;  -- Host is down 
+    EHOSTUNREACH = 113;  -- No route to host 
+    EALREADY = 114;  -- Operation already in progress 
+    EINPROGRESS = 115;  -- Operation now in progress 
+    ESTALE = 116;  -- Stale file handle 
+    EUCLEAN = 117;  -- Structure needs cleaning 
+    ENOTNAM = 118;  -- Not a XENIX named type file 
+    ENAVAIL = 119;  -- No XENIX semaphores available 
+    EISNAM = 120;  -- Is a named type file 
+    EREMOTEIO = 121;  -- Remote I/O error 
+    EDQUOT = 122;  -- Quota exceeded 
+
+    ENOMEDIUM = 123;  -- No medium found 
+    EMEDIUMTYPE = 124;  -- Wrong medium type 
+    ECANCELED = 125;  -- Operation Canceled 
+    ENOKEY = 126;  -- Required key not available 
+    EKEYEXPIRED = 127;  -- Key has expired 
+    EKEYREVOKED = 128;  -- Key has been revoked 
+    EKEYREJECTED = 129;  -- Key was rejected by service 
+
+-- for robust mutexes 
+    EOWNERDEAD = 130;  -- Owner died 
+    ENOTRECOVERABLE = 131;  -- State not recoverable 
+
+    ERFKILL = 132;  -- Operation not possible due to RF-kill 
+
+    EHWPOISON = 133;  -- Memory page has hardware error 
+}
+
+local function lookuperrno(errorNumber)
+	for name, value in pairs(exports.errnos) do
+		if value == errorNumber then
+			return name;
+		end
+
+	end
+
+	return "UNKNOWN ERROR: "..tostring(errorNumber);
+end
+
+exports.errnos.lookuperrno = lookuperrno;
+
+--[[
+setmetatable(exports, {
+	__call = function(self, params)
+		params = params or {}
+		if params.exportglobal then
+			for k,v in pairs(exports.errnos) do
+				_G[k] = v;
+			end
+		end
+		return self;
+	end
+})
+--]]
 
 setmetatable(exports, {
 	__call = function(self)

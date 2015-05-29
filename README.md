@@ -28,6 +28,7 @@ modules which are already compiled for the platform it's running on.
 Here's an example of using the json routines found within the 
 openvswitch library:
 
+```lua
 local libovs = require("lib.libopenvswitch");
 libovs();	-- make things global
 
@@ -43,6 +44,7 @@ local function test_jsonfromstring()
 		print("JSON SERIALIZATION FAILED...")
 	end
 end
+```
 
 Notice here that the 'json' routines are used just like they are if
 you were writing 'C' code, only it's easier because you don't have to 

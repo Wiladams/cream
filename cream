@@ -4,7 +4,6 @@ package.path = "./?.lua;./core/?.lua;./deps/?.lua;./deps/ljsyscall/?.lua;./lib/?
 local Kernel = require("kernel")
 Kernel:globalize();
 
---local asyncio = require("asyncio"){Kernel=Kernel, exportglobal = true}
 
 if (arg[1] ~= nil) then
 	local f, err = loadfile(arg[1])

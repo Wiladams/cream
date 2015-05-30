@@ -13,7 +13,7 @@
 local ffi = require("ffi")
 
 local exports = {}
-local C = {}	-- C interop, or syscall
+
 
 
 -- mostly from time.h

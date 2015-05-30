@@ -4,9 +4,7 @@ local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 
 local linux = require("linux")
 local errnos = linux.errnos;
-local net = require("linux_net")
-local epoll = require("epoll")
-local asyncio = require("asyncio")
+local asyncio = Kernel.AsyncIO
 
 
 
@@ -15,9 +13,9 @@ local function lookupsite(nodename, servname)
     local res = ffi.new("struct addrinfo * [1]")
     local hints = ffi.new("struct addrinfo")
 
-    --hints.ai_flags = net.AI_CANONNAME;
-    hints.ai_family = net.AF_INET;
-    hints.ai_socktype = net.SOCK_STREAM;
+    --hints.ai_flags = linux.AI_CANONNAME;
+    hints.ai_family = linux.AF_INET;
+    hints.ai_socktype = linux.SOCK_STREAM;
 
     local ret = ffi.C.getaddrinfo(nodename, servname, hints, res);
     --print("getaddrinfo: ", ret)
@@ -49,7 +47,7 @@ local AsyncSocket_mt = {
 
 function AsyncSocket.init(self, sock)
     local obj = {
-        fdesc = net.filedesc(sock);
+        fdesc = linux.filedesc(sock);
     }
     setmetatable(obj, AsyncSocket_mt);
 
@@ -57,28 +55,28 @@ function AsyncSocket.init(self, sock)
 
     obj.WatchdogEvent = ffi.new("struct epoll_event")
     obj.WatchdogEvent.data.ptr = obj.fdesc;
-    obj.WatchdogEvent.events = bor(epoll.EPOLLOUT,epoll.EPOLLIN, epoll.EPOLLRDHUP, epoll.EPOLLERR, epoll.EPOLLET);
+    obj.WatchdogEvent.events = bor(linux.EPOLLOUT,linux.EPOLLIN, linux.EPOLLRDHUP, linux.EPOLLERR, linux.EPOLLET);
 
     asyncio:watchForIOEvents(obj.fdesc, obj.WatchdogEvent);
 
     obj.ConnectEvent = ffi.new("struct epoll_event")
     obj.ConnectEvent.data.ptr = obj.fdesc;
-    obj.ConnectEvent.events = bor(epoll.EPOLLOUT,epoll.EPOLLRDHUP, epoll.EPOLLERR, epoll.EPOLLET);
+    obj.ConnectEvent.events = bor(linux.EPOLLOUT,linux.EPOLLRDHUP, linux.EPOLLERR, linux.EPOLLET);
 
     obj.ReadEvent = ffi.new("struct epoll_event")
     obj.ReadEvent.data.ptr = obj.fdesc;
-    obj.ReadEvent.events = bor(epoll.EPOLLIN, epoll.EPOLLERR); 
+    obj.ReadEvent.events = bor(linux.EPOLLIN, linux.EPOLLERR); 
 
     obj.WriteEvent = ffi.new("struct epoll_event")
     obj.WriteEvent.data.ptr = obj.fdesc;
-    obj.WriteEvent.events = bor(epoll.EPOLLOUT, epoll.EPOLLERR); 
+    obj.WriteEvent.events = bor(linux.EPOLLOUT, linux.EPOLLERR); 
 
     return obj;
 end
 
 function AsyncSocket.new(self, kind, flags, family)
-    kind = kind or net.SOCK_STREAM;
-    family = family or net.AF_INET
+    kind = kind or linux.SOCK_STREAM;
+    family = family or linux.AF_INET
     flags = flags or 0;
     local s = ffi.C.socket(family, kind, flags);
     if s < 0 then
@@ -91,7 +89,7 @@ end
 function AsyncSocket.setSocketOption(self, optname, on, level)
     local feature_on = ffi.new("int[1]")
     if on then feature_on[0] = 1; end
-    level = level or net.SOL_SOCKET 
+    level = level or linux.SOL_SOCKET 
 
     local ret = ffi.C.setsockopt(self.fdesc.fd, level, optname, feature_on, ffi.sizeof("int"))
     return ret == 0;
@@ -102,18 +100,18 @@ function AsyncSocket.setNonBlocking(self, on)
 end
 
 function AsyncSocket.setUseKeepAlive(self, on)
-    return self:setSocketOption(net.SO_KEEPALIVE, on);
+    return self:setSocketOption(linux.SO_KEEPALIVE, on);
 end
 
 function AsyncSocket.setReuseAddress(self, on)
-    return self:setSocketOption(net.SO_REUSEADDR, on);
+    return self:setSocketOption(linux.SO_REUSEADDR, on);
 end
 
 function AsyncSocket.getLastError(self)
     local retVal = ffi.new("int[1]")
     local retValLen = ffi.new("int[1]", ffi.sizeof("int"))
 
-    local ret = self:getSocketOption(net.SO_ERROR, retVal, retValLen)
+    local ret = self:getSocketOption(linux.SO_ERROR, retVal, retValLen)
 
     return retVal[0];
 end

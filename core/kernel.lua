@@ -865,11 +865,13 @@ end
 Kernel.Clock = Clock;
 Kernel.Functor = Functor;
 
---Kernel:globalize()
+
 
 Predicate({Kernel = Kernel, exportglobal=true})
 Alarm {Kernel=Kernel, exportglobal=true}
 AsyncIO{Kernel=Kernel, exportglobal = true}
+
+--Kernel:globalize()
 
 
 return Kernel;

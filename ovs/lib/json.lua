@@ -112,7 +112,7 @@ local jsonlib = ffi.load("openvswitch")
 
 local exports = {
     -- The shared library
-    jsonlib = jsonlib;
+    Lib_json = jsonlib;
 
     -- Enums
     JSON_NULL = ffi.C.JSON_NULL,

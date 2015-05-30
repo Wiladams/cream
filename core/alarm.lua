@@ -63,7 +63,6 @@ local Alarm = {
 
 setmetatable(Alarm, {
 	__call = function(self, params)
-	print("Alarm:__call: ", self, params)
 		params = params or {}
 		self.Kernel = params.Kernel;
 		if params.exportglobal then

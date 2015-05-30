@@ -1,8 +1,10 @@
 --libopenvswitch.lua
 local ffi = require("ffi")
 
+local Lib_openvswitch = ffi.load("openvswitch", true);
+
 local exports = {
-	Lib = ffi.load("openvswitch")
+	Lib_openvswitch = Lib_openvswitch
 }
 
 
@@ -16,15 +18,21 @@ local function import(dst, name)
 	local success, imports = pcall(function() return require(name) end)
 	if success and type(imports) == "table"  then
 		appendTable(dst, imports);
+	else
+		--print("IMPORT FAILED: ", name, imports)
 	end
 end
 
 
 import(exports, "ovs.lib.command_line")
+import(exports, "ovs.lib.dirs")
 import(exports, "ovs.lib.hmap")
 import(exports, "ovs.lib.json")
 import(exports, "ovs.lib.list")
+import(exports, "ovs.lib.ovsdb_error")
+import(exports, "ovs.lib.ovsdb_types")
 import(exports, "ovs.lib.shash")
+import(exports, "ovs.lib.uuid")
 
 setmetatable(exports, {
 	__call=function(self)

@@ -67,10 +67,7 @@ local function test_jsonfromstring()
 	end
 end
 
---print("==== libovs exports ====")
---for k,v in pairs(libovs) do
---	print(k,v)
---end
+
 
 --test_json_type();
 test_jsonfromstring();

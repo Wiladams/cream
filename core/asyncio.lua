@@ -6,14 +6,14 @@ local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 
 
 local Functor = require("core.functor")
-local epoll = require("core.epoll");
+local linux = require("core.linux");
 
 
 
 local AsyncIO = {
 	EventQuanta = 10;
 	ContinueRunning = true;
-	EPollSet = epoll.epollset();
+	EPollSet = linux.epollset();
 	MaxEvents = 100;		-- number of events we'll ask per quanta
 
 	READ = 1;

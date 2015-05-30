@@ -2,10 +2,12 @@ local ffi = require("ffi")
 local bit = require("bit")
 local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 
+local linux = require("linux")
+local errnos = linux.errnos;
 local net = require("linux_net")
 local epoll = require("epoll")
 local asyncio = require("asyncio")
-local errnos = require("linux").errnos
+
 
 
 local function lookupsite(nodename, servname)

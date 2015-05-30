@@ -32,6 +32,8 @@
 #include "ofp-util.h"
 --]]
 
+local common = require("testy.ovsdb_command_common")
+
 local VConn = require("vconn")
 
 local function printf(formatstr, ...)
@@ -94,7 +96,7 @@ local function main(int argc, char *argv[])
     local listeners = ffi.new("struct pvconn *[?]", MAX_LISTENERS);
     int i;
 
-    --ovs_cmdl_proctitle_init(argc, argv);
+    ovs_cmdl_proctitle_init(argc, argv);
     parse_options(argc, argv);
  
     if (argc - optind < 1) {
@@ -107,7 +109,6 @@ local function main(int argc, char *argv[])
 
     for i = optind, argc-1 do
         const char *name = argv[i];
-        struct vconn *vconn;
 
         local vconn, retval = VConn(name, get_allowed_ofp_versions(), DSCP_DEFAULT);
 
@@ -263,9 +264,9 @@ local function parse_options(int argc, char *argv[])
         {"peer-ca-cert", required_argument, nil , OPT_PEER_CA_CERT},
         {nil , 0, nil , 0},
     };
-    char *short_options = ovs_cmdl_long_options_to_short_options(long_options);
+    local short_options = ovs_cmdl_long_options_to_short_options(long_options);
 
-    for (;;) {
+    while (true) do
         int indexptr;
         char *error;
         int c;
@@ -348,7 +349,7 @@ local function parse_options(int argc, char *argv[])
         default:
             abort();
         }
-    }
+    end
     free(short_options);
 
     if (!simap_is_empty(&port_queues) || default_queue != UINT32_MAX) {
@@ -389,8 +390,8 @@ where METHOD is any OpenFlow connection method.
            "  --unixctl=SOCKET        override default control socket name\n"
            "  -h, --help              display this help message\n"
            "  -V, --version           display version information\n");
-    halt(EXIT_SUCCESS);
+    
+    exit();
 end
 
-run(main, #arg, arg);
-
+main(#arg, arg);

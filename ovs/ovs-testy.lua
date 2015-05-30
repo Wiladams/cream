@@ -2,8 +2,8 @@
 
 package.path = package.path..";../core/?.lua;../?.lua;"
 
-local Kernel = require("core.kernel"){exportglobal = true}
-local asyncio = require("core.asyncio"){Kernel=Kernel, exportglobal = true}
+local Kernel = require("core.kernel")
+Kernel:globalize();
 
 if (arg[1] ~= nil) then
 	local f, err = loadfile(arg[1])

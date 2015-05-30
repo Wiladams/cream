@@ -46,3 +46,17 @@ else
 end
 --]]
 
+local Lib_command_line = ffi.load("openvswitch")
+
+local exports = {
+	Lib_command_line = Lib_command_line;
+
+	ovs_cmdl_long_options_to_short_options = Lib_command_line.ovs_cmdl_long_options_to_short_options;
+	ovs_cmdl_print_options = Lib_command_line.ovs_cmdl_print_options;
+	ovs_cmdl_print_commands = Lib_command_line.ovs_cmdl_print_commands;
+	ovs_cmdl_run_command = Lib_command_line.ovs_cmdl_run_command;
+	ovs_cmdl_proctitle_init = Lib_command_line.ovs_cmdl_proctitle_init;
+	ovs_cmdl_proctitle_restore = Lib_command_line.ovs_cmdl_proctitle_restore;
+}
+
+return exports

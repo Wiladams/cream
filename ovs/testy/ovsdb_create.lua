@@ -1,4 +1,4 @@
-#!/usr/local/bin/luajit 
+--#!/usr/local/bin/luajit 
 
 package.path = package.path..";../?.lua"
 
@@ -7,10 +7,9 @@ local ffi = require("ffi")
 local common = require("testy.ovsdb_command_common")
 
 
-
 --print(common.default_db());
 --print(common.default_schema());
-print("args: ", arg[0], arg[1], arg[2], arg[3])
+--print("args: ", arg[0], arg[1], arg[2], arg[3])
 
 local function main()
     local db_file_name = arg[2] or common.default_db();
@@ -37,8 +36,8 @@ print("schema_file_name: ", schema_file_name);
 
     json_destroy(json);
 --]]
+    exit()
 end
 
 main();
 
-halt();

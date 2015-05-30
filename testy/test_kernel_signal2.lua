@@ -1,7 +1,3 @@
-package.path = package.path.."';../?.lua"
-
-local kernel = require("kernel"){exportglobal=true}
-local alarm = require("alarm")(kernel,true);
 
 local function waiter(num)
 	num = num or 0
@@ -14,6 +10,8 @@ local function waiter(num)
 end
 
 local function main()
+	print("MAIN, TaskID: ", getCurrentTaskID());
+	
 	for i=1,4 do
 		onSignal(waiter(i),"waiting")
 	end
@@ -32,8 +30,8 @@ print("After signalOne");
 
 	print("SLEEP AFTER signalAll")
 
-	halt();
+	exit();
 end
 
-run(main)
+main()
  

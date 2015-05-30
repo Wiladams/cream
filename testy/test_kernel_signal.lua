@@ -1,8 +1,8 @@
---test_scheduler.lua
-package.path = package.path..";../?.lua"
+--test_kernel_signal.lua
+--package.path = package.path..";../?.lua"
 
-local Kernel = require("kernel"){exportglobal = true}
-local Functor = require("functor")
+--local Kernel = require("kernel"){exportglobal = true}
+local Functor = Kernel.Functor
 
 local function numbers(ending)
 	local idx = 0;
@@ -41,6 +41,21 @@ local function counter(name, nCount)
 	signalAll(name..'-finished')
 end
 
+local function allDone(...)
+	local tasks = {...}
+	
+	local function closure()
+		for _, task in ipairs(tasks) do
+			if task:getStatus() ~= "dead" then
+				return false;
+			end
+		end
+		return true;
+	end
+
+	return closure
+end
+
 local function main()
 	local t1 = spawn(counter, "counter", 50)
 	local t2 = spawn(waitingOnCount, "counter", 20)
@@ -51,9 +66,11 @@ local function main()
 	local t13 = onSignal(Functor(onCountFinished, "counter-1"), "counter-finished")
 	local t14 = onSignal(Functor(onCountFinished, "counter-2"), "counter-finished")
 	local t15 = onSignal(Functor(onCountFinished, "counter-3"), "counter-finished")
+
+	when(allDone(t13, t14, t15), function() exit(); end);
 end
 
-run(main)
+main()
 
 
 print("After kernel run...")

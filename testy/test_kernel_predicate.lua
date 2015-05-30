@@ -1,8 +1,8 @@
---test_scheduler.lua
-package.path = package.path..";../?.lua"
+--test_kernel_predicate.lua
+--package.path = package.path..";../?.lua"
 
 
-local Kernel = require("kernel"){exportglobal = true}
+--local Kernel = require("kernel"){exportglobal = true}
 local Functor = Kernel.Functor
 
 local idx = 0;
@@ -76,6 +76,4 @@ local function main()
 
 end
 
-run(main)
-
-
+main()

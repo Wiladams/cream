@@ -1,7 +1,9 @@
 #!/usr/local/bin/luajit
 package.path = "./?.lua;./core/?.lua;./deps/?.lua;./deps/ljsyscall/?.lua;./lib/?.lua"
 
-local Kernel = require("kernel"){exportglobal = true}
+local Kernel = require("kernel")
+Kernel:globalize();
+
 --local asyncio = require("asyncio"){Kernel=Kernel, exportglobal = true}
 
 if (arg[1] ~= nil) then
@@ -12,8 +14,6 @@ if (arg[1] ~= nil) then
 		return false, err;
 	end
 	
-	local func = f();
-
-	run(func);
+	run(f);
 end
 

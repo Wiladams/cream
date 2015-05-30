@@ -13,7 +13,7 @@ function structForm.new(self, atype, depth, parent)
 	depth = depth or 1;
 	depth = depth - 1;
 
-print("WHAT: ", atype.what, depth);
+--print("WHAT: ", atype.what, depth);
 
 	local func = structForm[atype.what];
 	if not func then

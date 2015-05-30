@@ -13,8 +13,6 @@ if (arg[1] ~= nil) then
 		return false, err;
 	end
 	
-	local func = f();
-
-	run(func);
+	run(f);
 end
 

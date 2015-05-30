@@ -1,8 +1,4 @@
---test_scheduler.lua
-package.path = package.path..";../?.lua"
-
-local Kernel = require("kernel"){exportglobal = true}
-
+--test_kernel.lua
 
 local function numbers(ending)
 	local idx = 0;
@@ -32,7 +28,7 @@ local function counter(name, nCount)
 		print(name, num);
 		yield();
 	end
-	halt();
+	exit();
 end
 
 local function main()
@@ -42,7 +38,5 @@ local function main()
 	local t3 = spawn(counter, "counter2", 7)
 end
 
-run(main)
+main()
 
-
-print("After kernel run...")

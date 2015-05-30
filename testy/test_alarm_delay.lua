@@ -1,10 +1,6 @@
---test_stopwatch.lua
-package.path = package.path..";../?.lua"
+--test_alarm_delay.lua
 
-local Kernel = require("kernel"){exportglobal = true};
-local Clock = require("clock")
-
-local c1 = Clock();
+local c1 = Kernel.Clock();
 
 local function twoSeconds()
 	print("TWO SECONDS: ", c1:secondsElapsed());
@@ -16,4 +12,4 @@ local function test_alarm_delay()
 	delay(twoSeconds, 2000);
 end
 
-run(test_alarm_delay)
+test_alarm_delay()

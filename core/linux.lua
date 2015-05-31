@@ -13,6 +13,10 @@ local ffi = require("ffi")
 local bit = require("bit")
 local lshift, rshift, bor, band = bit.lshift, bit.rshift, bit.bor, bit.band;
 
+ffi.cdef[[
+void * malloc(const size_t size);
+void free(void *);
+]]
 
 ffi.cdef[[
 typedef int32_t       clockid_t;

@@ -16,4 +16,4 @@ end
 
 test_dirs()
 
-halt();
+exit();

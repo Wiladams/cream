@@ -17,7 +17,7 @@ local function main()
 
 print("db_file_name: ", db_file_name);
 print("schema_file_name: ", schema_file_name);
----[[
+
     local schemap = ffi.new("struct ovsdb_schema *[1]");
     local logp = ffi.new("struct ovsdb_log *[1]")
  
@@ -35,7 +35,7 @@ print("schema_file_name: ", schema_file_name);
     ovsdb_log_close(log);
 
     json_destroy(json);
---]]
+
     exit()
 end
 

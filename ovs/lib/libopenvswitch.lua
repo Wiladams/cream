@@ -35,6 +35,7 @@ import(exports, "ovs.lib.ovsdb_types")
 import(exports, "ovs.lib.shash")
 import(exports, "ovs.lib.table")
 import(exports, "ovs.lib.unixctl")
+import(exports, "ovs.lib.util")
 import(exports, "ovs.lib.uuid")
 
 setmetatable(exports, {

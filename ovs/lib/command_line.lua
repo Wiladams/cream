@@ -37,14 +37,14 @@ void ovs_cmdl_proctitle_init(int argc, char **argv);
 void ovs_cmdl_proctitle_restore(void);
 ]]
 
---[[
-if ffi.os() == "freebsd" or ffi.os() == "netbsd" then
+
+if ffi.os == "freebsd" or ffi.os == "netbsd" then
 --#define ovs_cmdl_proctitle_set setproctitle
 else
 --void ovs_cmdl_proctitle_set(const char *, ...)
 --    OVS_PRINTF_FORMAT(1, 2);
 end
---]]
+
 
 local Lib_command_line = ffi.load("openvswitch")
 

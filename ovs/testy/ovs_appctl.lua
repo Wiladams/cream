@@ -1,17 +1,33 @@
 local ffi = require("ffi")
 
 local common = require("testy.ovsdb_command_common")
-
 local stringz = require("stringz")
+local OptionParser = require("std.optparse") 
+
+
+local OptionsSpec = [[
+v1.0
+
+
+Usage: ovs_appctl.lua
+
+NOTE: For specifying various command line flags, you MUST
+have a 'comment' after the flag, or the parser will hang
+
+Options:
+    -t, --target=TARGET         pidfile or socket to contact
+    -e, --execute               no argument 
+    -o, --option                display some options
+    -T, --timeout=SECS          wait at most SECS seconds for a response
+    -V, --version               display ovs_appctr version information
+    -h, --help                  display help and exit
+]]
+
+local program_name = arg[1];
+
 
 --[[
 #include <config.h>
-
-#include <errno.h>
-#include <getopt.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
 #include "daemon.h"
 #include "dynamic-string.h"
@@ -19,35 +35,32 @@ local stringz = require("stringz")
 #include "timeval.h"
 #include "util.h"
 #include "openvswitch/vlog.h"
-
-static void usage(void);
-static const char *parse_command_line(int argc, char *argv[]);
-static struct jsonrpc *connect_to_target(const char *target);
 --]]
 
 --[[
-local function main(int argc, char *argv[])
+local function main()
 
     char *cmd_result, *cmd_error;
-    struct jsonrpc *client;
+
     char *cmd, **cmd_argv;
-    const char *target;
     int cmd_argc;
     int error;
 
     set_program_name(argv[0]);
 
-    /* Parse command line and connect to target. */
-    target = parse_command_line(argc, argv);
-    client = connect_to_target(target);
+    -- Parse command line and connect to target. */
+    local target = parse_command_line();
+    local client = connect_to_target(target);
 
-    /* Transact request and process reply. */
-    cmd = argv[optind++];
-    cmd_argc = argc - optind;
+    -- Transact request and process reply. */
+    local cmd = argv[optind++];
+    local cmd_argc = argc - optind;
     cmd_argv = cmd_argc ? argv + optind : NULL;
-    error = unixctl_client_transact(client, cmd, cmd_argc, cmd_argv,
+    
+    local err = unixctl_client_transact(client, cmd, cmd_argc, cmd_argv,
                                     &cmd_result, &cmd_error);
-    if (error) {
+    
+    if (err) {
         ovs_fatal(error, "%s: transaction error", target);
     }
 
@@ -69,7 +82,6 @@ local function main(int argc, char *argv[])
 end
 --]]
 
-local program_name = arg[1];
 
 local function usage()
 
@@ -98,14 +110,9 @@ Other options:
     exit(EXIT_SUCCESS);
 end
 
---[[
-static const char *
-local function parse_command_line(int argc, char *argv[])
 
-    enum {
-        OPT_START = UCHAR_MAX + 1,
-        VLOG_OPTION_ENUMS
-    };
+
+--[[
     static const struct option long_options[] = {
         {"target", required_argument, NULL, 't'},
         {"execute", no_argument, NULL, 'e'},
@@ -116,28 +123,68 @@ local function parse_command_line(int argc, char *argv[])
         VLOG_LONG_OPTIONS,
         {NULL, 0, NULL, 0},
     };
-    char *short_options_ = ovs_cmdl_long_options_to_short_options(long_options);
-    char *short_options = xasprintf("+%s", short_options_);
-    const char *target;
-    int e_options;
+--]]
 
-    target = NULL;
-    e_options = 0;
-    for (;;) {
-        int option;
+local function setTarget(arglist, i, value)
+    print("==== setTarget ====")
+    --print("ARG List: ", arglist)
+    print("       I: ",i);
+    for idx, item in ipairs(i) do
+        print(idx, item)
+    end
 
-        option = getopt_long(argc, argv, short_options, long_options, NULL);
-        if (option == -1) {
-            break;
-        }
-        switch (option) {
-        case 't':
-            if (target) {
-                ovs_fatal(0, "-t or --target may be specified only once");
-            }
-            target = optarg;
-            break;
 
+    print("   Value: ", value)
+end
+
+
+
+
+local function parse_command_line()
+
+--    enum {
+--        OPT_START = UCHAR_MAX + 1,
+--        VLOG_OPTION_ENUMS
+--    };
+--print("1.0")
+    local parser = OptionParser(OptionsSpec);
+--print("2.0")
+    parser:on('--', parser.finished)
+--print("3.0")
+    --parser:on("t, target", setTarget);
+
+    _G.arg, _G.opts = parser:parse (_G.arg)
+
+
+    local target = nil;
+    local e_options = 0;
+
+    local actions = {
+        target = function(value)
+        print("==== argActions.target: ", value);
+        if target ~= nil then
+            ovs_fatal(0, "-t or --target may be specified only once");
+        end
+
+            target = value;
+        end,
+
+        help = function(value)
+            print("==== argActions.help: ", value)
+            usage();
+        end,
+    }
+
+
+    -- Perform actions based on command line arguments
+    for k,value in pairs(opts) do
+        if actions[k] then
+            actions[k](value);
+        end
+    end    
+
+
+--[[
         case 'e':
             /* We ignore -e for compatibility.  Older versions specified the
              * command as the argument to -e.  Since the current version takes
@@ -148,9 +195,6 @@ local function parse_command_line(int argc, char *argv[])
             }
             break;
 
-        case 'h':
-            usage();
-            break;
 
         case 'o':
             ovs_cmdl_print_options(long_options);
@@ -169,22 +213,16 @@ local function parse_command_line(int argc, char *argv[])
         case '?':
             exit(EXIT_FAILURE);
 
-        default:
-            OVS_NOT_REACHED();
-        }
-    }
-    ffi.C.free(short_options_);
-    ffi.C.free(short_options);
+]] 
+print("TARGET:", target)
 
-    if (optind >= argc) {
-        ovs_fatal(0, "at least one non-option argument is required "
-                  "(use --help for help)");
-    }
+    target = target or "ovs-vswitchd";
 
-    return target ? target : "ovs-vswitchd";
+    return target;
 end
---]]
 
+
+--[[
 local function connect_to_target(target)
 
     local socket_name = nil;
@@ -220,10 +258,10 @@ local function connect_to_target(target)
 
     return client;
 end
-
+--]]
 
 --main();
-
-usage();
+--usage();
+parse_command_line();
 
 exit();

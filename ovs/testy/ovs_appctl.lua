@@ -6,7 +6,7 @@ local OptionParser = require("std.optparse")
 
 
 local OptionsSpec = [[
-v1.0
+VERSION: v1.0
 
 
 Usage: ovs_appctl.lua
@@ -37,15 +37,9 @@ local program_name = arg[1];
 #include "openvswitch/vlog.h"
 --]]
 
---[[
+
 local function main()
-
-    char *cmd_result, *cmd_error;
-
-    char *cmd, **cmd_argv;
-    int cmd_argc;
-    int error;
-
+--[[
     set_program_name(argv[0]);
 
     -- Parse command line and connect to target. */
@@ -55,32 +49,41 @@ local function main()
     -- Transact request and process reply. */
     local cmd = argv[optind++];
     local cmd_argc = argc - optind;
-    cmd_argv = cmd_argc ? argv + optind : NULL;
+    local cmd_argv = nil;
+    if cmd_argc ~= 0 then
+        cmd_argv = argv+optind;
+    end
     
+    local cmd_resultp = ffi.new("char *[1]")
+    local cmd_errorp = ffi.new("char *[1]")
+
     local err = unixctl_client_transact(client, cmd, cmd_argc, cmd_argv,
-                                    &cmd_result, &cmd_error);
+                                    cmd_resultp, &cmd_error);
     
+    local cmd_result = cmd_resultp[0];
+
     if (err) {
-        ovs_fatal(error, "%s: transaction error", target);
+        ovs_fatal(err, "%s: transaction error", target);
     }
 
-    if (cmd_error) {
+    if (cmd_error ~= 0) then
         jsonrpc_close(client);
         fputs(cmd_error, stderr);
         ovs_error(0, "%s: server returned an error", target);
         exit(2);
-    } else if (cmd_result) {
+    elseif (cmd_result ~= nil) then
         fputs(cmd_result, stdout);
-    } else {
+    else
         OVS_NOT_REACHED();
-    }
+    end
 
     jsonrpc_close(client);
-    free(cmd_result);
-    free(cmd_error);
+    ffi.C.free(cmd_result);
+    ffi.C.free(cmd_error);
+--]]    
     return 0;
 end
---]]
+
 
 
 local function usage()
@@ -114,8 +117,7 @@ end
 
 --[[
     static const struct option long_options[] = {
-        {"target", required_argument, NULL, 't'},
-        {"execute", no_argument, NULL, 'e'},
+         {"execute", no_argument, NULL, 'e'},
         {"help", no_argument, NULL, 'h'},
         {"option", no_argument, NULL, 'o'},
         {"version", no_argument, NULL, 'V'},
@@ -125,20 +127,6 @@ end
     };
 --]]
 
-local function setTarget(arglist, i, value)
-    print("==== setTarget ====")
-    --print("ARG List: ", arglist)
-    print("       I: ",i);
-    for idx, item in ipairs(i) do
-        print(idx, item)
-    end
-
-
-    print("   Value: ", value)
-end
-
-
-
 
 local function parse_command_line()
 
@@ -146,12 +134,11 @@ local function parse_command_line()
 --        OPT_START = UCHAR_MAX + 1,
 --        VLOG_OPTION_ENUMS
 --    };
---print("1.0")
+
     local parser = OptionParser(OptionsSpec);
---print("2.0")
+
     parser:on('--', parser.finished)
---print("3.0")
-    --parser:on("t, target", setTarget);
+
 
     _G.arg, _G.opts = parser:parse (_G.arg)
 
@@ -161,10 +148,10 @@ local function parse_command_line()
 
     local actions = {
         target = function(value)
-        print("==== argActions.target: ", value);
-        if target ~= nil then
-            ovs_fatal(0, "-t or --target may be specified only once");
-        end
+            print("==== argActions.target: ", value);
+            if target ~= nil then
+                ovs_fatal(0, "-t or --target may be specified only once");
+            end
 
             target = value;
         end,
@@ -222,7 +209,7 @@ print("TARGET:", target)
 end
 
 
---[[
+
 local function connect_to_target(target)
 
     local socket_name = nil;
@@ -258,7 +245,7 @@ local function connect_to_target(target)
 
     return client;
 end
---]]
+
 
 --main();
 --usage();

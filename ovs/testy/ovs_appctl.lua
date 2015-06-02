@@ -39,13 +39,13 @@ local program_name = arg[1];
 
 
 local function main()
---[[
-    set_program_name(argv[0]);
+
+    --set_program_name(argv[0]);
 
     -- Parse command line and connect to target. */
     local target = parse_command_line();
     local client = connect_to_target(target);
-
+--[[
     -- Transact request and process reply. */
     local cmd = argv[optind++];
     local cmd_argc = argc - optind;
@@ -58,13 +58,14 @@ local function main()
     local cmd_errorp = ffi.new("char *[1]")
 
     local err = unixctl_client_transact(client, cmd, cmd_argc, cmd_argv,
-                                    cmd_resultp, &cmd_error);
+                                    cmd_resultp, cmd_errorp);
     
     local cmd_result = cmd_resultp[0];
+    local cmd_error = cmd_errorp[0];
 
-    if (err) {
+    if (err ~= 0) then
         ovs_fatal(err, "%s: transaction error", target);
-    }
+    end
 
     if (cmd_error ~= 0) then
         jsonrpc_close(client);
@@ -76,11 +77,11 @@ local function main()
     else
         OVS_NOT_REACHED();
     end
-
+--]]
     jsonrpc_close(client);
-    ffi.C.free(cmd_result);
-    ffi.C.free(cmd_error);
---]]    
+    --ffi.C.free(cmd_result);
+    --ffi.C.free(cmd_error);
+
     return 0;
 end
 

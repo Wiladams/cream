@@ -545,6 +545,7 @@ end
 
 local exports = {
     ovs_abort = Lib_util.ovs_abort;
+    ovs_fatal = Lib_util.ovs_fatal;
 }
 
 return exports;
